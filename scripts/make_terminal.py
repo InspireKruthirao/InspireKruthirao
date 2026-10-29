@@ -2,6 +2,7 @@
 
 Edit the PROFILE / PLAN lists below and run:  python3 scripts/make_terminal.py
 """
+import json
 import math
 from html import escape
 from pathlib import Path
@@ -31,7 +32,17 @@ CW = 8.4            # monospace character width at 14px
 LH = 20             # line height
 PAD = 24
 TOP = 60            # baseline of first prompt line
-INFO_X = 250        # x where neofetch info column starts
+
+# ASCII portrait (from scripts/make_portrait.py); the card works without it too
+PORTRAIT_FILE = Path(__file__).resolve().parent.parent / "assets" / "portrait.json"
+PORTRAIT = json.loads(PORTRAIT_FILE.read_text()) if PORTRAIT_FILE.exists() else None
+P_CW, P_LH = 4.8, 8.7                       # portrait glyph width / line height (8px font)
+P_W = PORTRAIT["cols"] * P_CW if PORTRAIT else 0
+P_H = PORTRAIT["rows"] * P_LH if PORTRAIT else 0
+
+HELIX_HALF = 5                                      # helix half-width in characters
+HELIX_CX = PAD + (P_W + 18 if PORTRAIT else 0) + (HELIX_HALF + 1) * CW
+INFO_X = HELIX_CX + (HELIX_HALF + 3) * CW          # x where neofetch info column starts
 
 C = dict(bg="#0d1117", bar="#161b22", border="#30363d", fg="#c9d1d9", dim="#6e7681",
          green="#3fb950", lime="#7ee787", blue="#79c0ff", yellow="#e3b341",
@@ -86,14 +97,14 @@ def typed_command(y, cmd, t_show, t_type, cid, cursor_hide=True):
     return end + 0.35
 
 
-def helix_frame(phase, rows=11, cx=PAD + 9 * CW):
+def helix_frame(phase, rows=11, cx=HELIX_CX):
     """One frame of an ASCII double helix as a list of (x, y, char, color)."""
     bases = "ATCGGCTAAGCTTAGC"
     pairs = {"A": "T", "T": "A", "C": "G", "G": "C"}
     pts = []
     for r in range(rows):
         a = r * 0.62 + phase
-        w = round(6 * math.sin(a))
+        w = round(HELIX_HALF * math.sin(a))
         y = TOP + LH + r * LH
         l, rr = cx - w * CW, cx + w * CW
         front_left = math.cos(a) > 0
@@ -122,6 +133,28 @@ def helix_svg(t_show):
 
 # --------------------------------------------------------------- timeline ---
 t = typed_command(TOP, "neofetch", 0.4, 1.0, "c0")
+
+def portrait_svg(t_start):
+    """Coloured ASCII portrait, printed row by row like a terminal."""
+    out = []
+    xs_row = " ".join(f"{PAD + i * P_CW:.1f}" for i in range(PORTRAIT["cols"]))
+    for r, row in enumerate(PORTRAIT["cells"]):
+        spans, run, run_col = [], "", None
+        for ch, col in row + [[None, None]]:      # merge neighbouring cells of the same colour
+            if col != run_col and run:
+                spans.append(f'<tspan fill="{run_col}">{escape(run)}</tspan>')
+                run = ""
+            if ch is not None:
+                run, run_col = run + ch, col
+        y = TOP + 16 + r * P_LH
+        out.append(f'<text class="p" x="{xs_row}" y="{y:.1f}" visibility="hidden">{"".join(spans)}'
+                   f'{show(t_start + r * 0.03)}</text>')
+    return "".join(out), t_start + len(PORTRAIT["cells"]) * 0.03
+
+
+if PORTRAIT:
+    ptxt, t = portrait_svg(t)
+    body.append(ptxt)
 body.append(helix_svg(t))
 
 info_y = TOP + LH
@@ -139,7 +172,7 @@ sw_y = info_y + len(lines) * LH + 4
 for i, col in enumerate([C["pink"], C["yellow"], C["green"], C["blue"], C["purple"], C["fg"]]):
     body.append(f'<rect x="{INFO_X + i * 26}" y="{sw_y}" width="22" height="12" rx="2" fill="{col}" visibility="hidden">{show(t)}</rect>')
 
-y = max(sw_y + 12, TOP + LH * 12) + 34
+y = round(max(sw_y + 12, TOP + LH * 12, TOP + 16 + P_H)) + 34
 t = typed_command(y, "cat ~/.plan", t + 0.5, t + 1.1, "c1")
 for mark, text in PLAN:
     y += LH
@@ -164,6 +197,7 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{
 <title id="title">{escape(alt)}</title>
 <style>
 text {{ font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 14px; white-space: pre; }}
+.p {{ font-size: 8px; font-weight: 700; }}
 .title {{ fill: {C["dim"]}; font-size: 12px; }}
 @keyframes a0 {{ 0%,33.32% {{ opacity: 1; }} 33.33%,100% {{ opacity: 0; }} }}
 @keyframes a1 {{ 0%,33.32% {{ opacity: 0; }} 33.33%,66.65% {{ opacity: 1; }} 66.66%,100% {{ opacity: 0; }} }}
