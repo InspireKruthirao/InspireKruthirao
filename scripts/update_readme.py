@@ -10,6 +10,7 @@ import json
 import os
 import re
 import urllib.request
+from datetime import datetime, timezone
 
 USER = os.environ["GH_USERNAME"]
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
@@ -106,6 +107,9 @@ def main():
         content = f.read()
     new = replace(content, "<!-- REPO-LIST:START -->", "<!-- REPO-LIST:END -->", repo_lines())
     new = replace(new, "<!--START_SECTION:activity-->", "<!--END_SECTION:activity-->", activity_lines())
+    # keep the snake heading's year in step with the snake workflow (current calendar year)
+    new = re.sub(r"(snake --eat ~/contributions --year )\d{4}",
+                 lambda m: m.group(1) + str(datetime.now(timezone.utc).year), new)
     if new != content:
         with open(README, "w", encoding="utf-8") as f:
             f.write(new)

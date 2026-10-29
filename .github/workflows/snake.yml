@@ -6,22 +6,49 @@ on:
   workflow_dispatch:      # run it manually from the Actions tab
   push:
     branches: [main]
+    paths:
+      - ".github/workflows/snake.yml"
+      - "scripts/patch_snk.py"
 
 permissions:
   contents: write
 
+env:
+  SNK_VERSION: a041d6c27ba561a39f5be9c26a784812765e434b # Platane/snk v3.5.0, pinned so the patch stays valid
+
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Generate snake SVGs from the contribution graph
-        uses: Platane/snk@v3
+      - uses: actions/checkout@v4
+
+      - name: Get snake generator
+        uses: actions/checkout@v4
         with:
-          github_user_name: ${{ github.repository_owner }}
-          outputs: |
-            dist/github-snake.svg
-            dist/github-snake-dark.svg?palette=github-dark
+          repository: Platane/snk
+          ref: ${{ env.SNK_VERSION }}
+          path: snk
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Limit snake to the current calendar year
+        run: |
+          YEAR=$(date -u +%Y)
+          echo "SNAKE_FROM=${YEAR}-01-01T00:00:00Z" >> "$GITHUB_ENV"
+          echo "SNAKE_TO=${YEAR}-12-31T23:59:59Z" >> "$GITHUB_ENV"
+          python3 scripts/patch_snk.py snk
+
+      - name: Generate snake SVGs
+        working-directory: snk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bun install --frozen-lockfile
+          bun packages/generate-snake-animation/cli.ts \
+            --github_user=${{ github.repository_owner }} \
+            --output=../dist/github-snake.svg \
+            --output="../dist/github-snake-dark.svg?palette=github-dark"
 
       - name: Publish SVGs to the "output" branch
         uses: crazy-max/ghaction-github-pages@v4

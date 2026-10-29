@@ -44,7 +44,7 @@
   </picture>
 </p>
 
-### `$ snake --eat ~/contributions`
+### `$ snake --eat ~/contributions --year 2026`
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/InspireKruthirao/InspireKruthirao/output/github-snake.svg" />
