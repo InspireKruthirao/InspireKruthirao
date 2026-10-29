@@ -36,7 +36,7 @@ TOP = 60            # baseline of first prompt line
 # ASCII portrait (from scripts/make_portrait.py); the card works without it too
 PORTRAIT_FILE = Path(__file__).resolve().parent.parent / "assets" / "portrait.json"
 PORTRAIT = json.loads(PORTRAIT_FILE.read_text()) if PORTRAIT_FILE.exists() else None
-P_CW, P_LH = 4.8, 8.7                       # portrait glyph width / line height (8px font)
+P_CW, P_LH = 3.0, 3.0                       # portrait cell size (4.2px font, tightly packed)
 P_W = PORTRAIT["cols"] * P_CW if PORTRAIT else 0
 P_H = PORTRAIT["rows"] * P_LH if PORTRAIT else 0
 
@@ -136,20 +136,24 @@ t = typed_command(TOP, "neofetch", 0.4, 1.0, "c0")
 
 def portrait_svg(t_start):
     """Coloured ASCII portrait, printed row by row like a terminal."""
-    out = []
-    xs_row = " ".join(f"{PAD + i * P_CW:.1f}" for i in range(PORTRAIT["cols"]))
+    out, step = [], 0.012
     for r, row in enumerate(PORTRAIT["cells"]):
+        while row and row[-1][1] is None:          # drop trailing background cells
+            row = row[:-1]
+        if not row:
+            continue
+        xs_row = " ".join(f"{PAD + i * P_CW:.1f}" for i in range(len(row)))
         spans, run, run_col = [], "", None
-        for ch, col in row + [[None, None]]:      # merge neighbouring cells of the same colour
+        for ch, col in row + [[None, "END"]]:     # merge neighbouring cells of the same colour
             if col != run_col and run:
-                spans.append(f'<tspan fill="{run_col}">{escape(run)}</tspan>')
+                spans.append(escape(run) if run_col is None else f'<tspan fill="{run_col}">{escape(run)}</tspan>')
                 run = ""
             if ch is not None:
                 run, run_col = run + ch, col
-        y = TOP + 16 + r * P_LH
+        y = TOP + 14 + r * P_LH
         out.append(f'<text class="p" x="{xs_row}" y="{y:.1f}" visibility="hidden">{"".join(spans)}'
-                   f'{show(t_start + r * 0.03)}</text>')
-    return "".join(out), t_start + len(PORTRAIT["cells"]) * 0.03
+                   f'{show(t_start + r * step)}</text>')
+    return "".join(out), t_start + len(PORTRAIT["cells"]) * step
 
 
 if PORTRAIT:
@@ -197,7 +201,7 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{
 <title id="title">{escape(alt)}</title>
 <style>
 text {{ font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 14px; white-space: pre; }}
-.p {{ font-size: 8px; font-weight: 700; }}
+.p {{ font-size: 4.2px; font-weight: 700; }}
 .title {{ fill: {C["dim"]}; font-size: 12px; }}
 @keyframes a0 {{ 0%,33.32% {{ opacity: 1; }} 33.33%,100% {{ opacity: 0; }} }}
 @keyframes a1 {{ 0%,33.32% {{ opacity: 0; }} 33.33%,66.65% {{ opacity: 1; }} 66.66%,100% {{ opacity: 0; }} }}

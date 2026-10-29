@@ -3,58 +3,78 @@
 Writes assets/portrait.json (characters + colours only; the photo itself is not stored).
 Run locally whenever you want a new picture:
 
-    pip install pillow
-    python3 scripts/make_portrait.py path/to/photo.png [--crop L,T,R,B] [--cols 56]
+    pip install pillow numpy scikit-image "rembg[cpu]"
+    python3 scripts/make_portrait.py path/to/photo.png [--crop L,T,R,B] [--cols 80]
     python3 scripts/make_terminal.py
 
---crop is in pixels of the original photo (left, top, right, bottom).
+--crop is in pixels of the original photo (left, top, right, bottom); aim for head and shoulders.
+The background is removed automatically (rembg); pass --keep-background to skip that.
 """
 import argparse
 import json
 from pathlib import Path
 
-from PIL import Image, ImageEnhance, ImageOps
+import numpy as np
+from PIL import Image
+from skimage import color as skcolor
+from skimage import exposure, transform
 
-# light -> dense; brighter pixels get "heavier" glyphs so their colour reads well on the dark card
-RAMP = "-:+gitGIT#@"  # git letters in the middle of the ramp; every cell is visible, colour carries the picture
-CHAR_ASPECT = 4.8 / 8.7  # glyph width / line height of the portrait font in make_terminal.py
+RAMP = ".:-=+itgIGT#%@"   # dark -> bright; the git letters sit in the middle
+CELL_W, CELL_H = 3.0, 3.0  # must match P_CW / P_LH in make_terminal.py
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("image")
     ap.add_argument("--crop", help="left,top,right,bottom in pixels")
-    ap.add_argument("--cols", type=int, default=56)
+    ap.add_argument("--cols", type=int, default=80)
+    ap.add_argument("--keep-background", action="store_true")
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "assets" / "portrait.json"))
     a = ap.parse_args()
 
     im = Image.open(a.image).convert("RGB")
+    if a.keep_background:
+        im = im.convert("RGBA")
+    else:
+        from rembg import new_session, remove
+        im = remove(im, session=new_session("u2net_human_seg")).convert("RGBA")
     if a.crop:
         im = im.crop(tuple(int(v) for v in a.crop.split(",")))
-    im = ImageEnhance.Contrast(im).enhance(1.25)
-    im = ImageEnhance.Color(im).enhance(1.2)
+
+    px = np.asarray(im).astype(float) / 255
+    rgb, alpha = px[..., :3], px[..., 3]
+    # local contrast so eyes, smile and hair detail survive the downscale
+    lum = exposure.equalize_adapthist(skcolor.rgb2gray(rgb), clip_limit=0.02, kernel_size=24)
 
     cols = a.cols
-    rows = max(1, round(cols * im.height / im.width * CHAR_ASPECT))
-    small = im.resize((cols, rows), Image.LANCZOS)
-    gray = ImageOps.autocontrast(small.convert("L"), cutoff=2)
+    rows = round(cols * lum.shape[0] / lum.shape[1] * CELL_W / CELL_H)
+    L = transform.resize(lum, (rows, cols), anti_aliasing=True)
+    A = transform.resize(alpha, (rows, cols), anti_aliasing=True)
+    C = transform.resize(rgb, (rows, cols, 3), anti_aliasing=True)
 
-    lines = []
+    cells = []
     for y in range(rows):
         row = []
         for x in range(cols):
-            lum = gray.getpixel((x, y)) / 255
-            ch = RAMP[min(len(RAMP) - 1, int(lum * (len(RAMP) - 1) + 0.5))]
-            r, g, b = small.getpixel((x, y))
-            # lift shadows so dark hair/skin still shows on the dark card background
-            r, g, b = (int(28 + c * 0.9) for c in (r, g, b))
-            # quantise colours a little to keep the SVG small
-            r, g, b = (min(255, (c // 12) * 12 + 6) for c in (r, g, b))
+            if A[y, x] < 0.45:
+                row.append([" ", None])  # background: leave empty
+                continue
+            v = float(np.clip(L[y, x], 0, 1))
+            ch = RAMP[int(v * (len(RAMP) - 1) + 0.5)]
+            # lift shadows a little so dark hair still shows on the dark card, then quantise
+            r, g, b = (min(255, int((30 + c * 255 * 0.95) * 1.12)) for c in C[y, x])
+            r, g, b = (min(255, (c // 10) * 10 + 5) for c in (r, g, b))
             row.append([ch, f"#{r:02x}{g:02x}{b:02x}"])
-        lines.append(row)
+        cells.append(row)
+
+    # trim empty rows left above/below the cut-out
+    filled = [i for i, row in enumerate(cells) if any(c is not None for _, c in row)]
+    cells = cells[filled[0]:filled[-1] + 1]
+    rows = len(cells)
 
     Path(a.out).parent.mkdir(exist_ok=True)
-    Path(a.out).write_text(json.dumps({"cols": cols, "rows": rows, "cells": lines}), encoding="utf-8")
+    Path(a.out).write_text(json.dumps({"cols": cols, "rows": rows, "cells": cells},
+                                      separators=(",", ":")), encoding="utf-8")
     print(f"wrote {a.out} ({cols}x{rows})")
 
 
