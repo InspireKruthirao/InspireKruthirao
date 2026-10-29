@@ -22,6 +22,12 @@ jobs:
       - name: Regenerate terminal card
         run: python3 scripts/make_terminal.py
 
+      - name: Regenerate stats card
+        run: python3 scripts/make_stats.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_USERNAME: ${{ github.repository_owner }}
+
       - name: Refresh repo list and recent activity
         run: python3 scripts/update_readme.py
         env:
@@ -36,6 +42,6 @@ jobs:
           fi
           git config user.name "Nithya Kruthi Macha"
           git config user.email "82725469+InspireKruthirao@users.noreply.github.com"
-          git add README.md assets/terminal.svg
+          git add README.md assets/terminal.svg assets/stats.svg
           git commit -m "Update README"
           git push

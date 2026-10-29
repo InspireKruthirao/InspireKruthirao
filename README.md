@@ -33,16 +33,7 @@
 
 ### `$ gh stats --me`
 
-<p>
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api?username=InspireKruthirao&show_icons=true&hide_border=true&bg_color=00000000&include_all_commits=true&count_private=true" />
-    <img height="160" src="https://github-readme-stats.vercel.app/api?username=InspireKruthirao&show_icons=true&hide_border=true&theme=github_dark&bg_color=00000000&title_color=7ee787&icon_color=3fb950&include_all_commits=true&count_private=true" alt="GitHub stats" />
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-stats.vercel.app/api/top-langs/?username=InspireKruthirao&layout=compact&hide_border=true&bg_color=00000000" />
-    <img height="160" src="https://github-readme-stats.vercel.app/api/top-langs/?username=InspireKruthirao&layout=compact&hide_border=true&theme=github_dark&bg_color=00000000&title_color=7ee787" alt="Top languages" />
-  </picture>
-</p>
+<img src="./assets/stats.svg" width="100%" alt="GitHub stats and top languages" />
 
 ### `$ snake --eat ~/contributions --year 2026`
 
