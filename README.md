@@ -14,7 +14,7 @@
 ### `$ ls -t ~/repos | head -5`
 
 <!-- REPO-LIST:START -->
-- `2026-10-30` [Kruthi_PhD_Updates](https://github.com/InspireKruthirao/Kruthi_PhD_Updates) · Repository containing code, data, and documentation of PhD project
+- `2026-11-04` [Kruthi_PhD_Updates](https://github.com/InspireKruthirao/Kruthi_PhD_Updates) · Repository containing code, data, and documentation of PhD project
 - `2026-10-30` [vibe-workshops-dogs](https://github.com/InspireKruthirao/vibe-workshops-dogs) · Structure and first look at the dog gut MAG dataset from the vibe-workshops intro se…
 - `2026-10-27` [dossier](https://github.com/InspireKruthirao/dossier) `fork` · A self-hosted job search app that writes tailored resumes and cover letters from you…
 - `2026-09-28` [GMSC-mapper](https://github.com/InspireKruthirao/GMSC-mapper) `fork`
