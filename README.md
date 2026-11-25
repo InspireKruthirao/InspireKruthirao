@@ -24,12 +24,11 @@
 ### `$ git log --author=kruthi --all --oneline -6`
 
 <!--START_SECTION:activity-->
-- `2026-11-24` ⬆️ pushed to [InspireKruthirao/Kruthi_PhD_Updates](https://github.com/InspireKruthirao/Kruthi_PhD_Updates)
+- `2026-11-25` ⬆️ pushed to [InspireKruthirao/Kruthi_PhD_Updates](https://github.com/InspireKruthirao/Kruthi_PhD_Updates)
 - `2026-10-30` ⬆️ pushed to [InspireKruthirao/vibe-workshops-dogs](https://github.com/InspireKruthirao/vibe-workshops-dogs)
 - `2026-10-30` 🌿 branched `main` in [InspireKruthirao/vibe-workshops-dogs](https://github.com/InspireKruthirao/vibe-workshops-dogs)
 - `2026-10-29` ⭐ starred [AienTech/dossier](https://github.com/AienTech/dossier)
 - `2026-10-29` 🍴 forked [AienTech/dossier](https://github.com/AienTech/dossier)
-- `2026-10-26` ⭐ starred [spotify/voyager](https://github.com/spotify/voyager)
 <!--END_SECTION:activity-->
 
 <sub>↳ both lists synced every 6 hours from my public GitHub activity</sub>
